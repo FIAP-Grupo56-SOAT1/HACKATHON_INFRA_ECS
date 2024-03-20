@@ -1,5 +1,5 @@
 ########## Creating an ECS Cluster ########
-resource "aws_ecs_cluster" "ecs_fasteats" {
+resource "aws_ecs_cluster" "ecs_hackathon" {
   name               = "cluster-${var.micro_servico}"
   setting {
     name  = "containerInsights"
@@ -23,7 +23,7 @@ resource "random_string" "lower" {
 }
 
 ######### Configuring AWS ECS Task Definitions ########
-resource "aws_ecs_task_definition" "fasteats" {
+resource "aws_ecs_task_definition" "hackathon" {
   family = "task-${var.micro_servico}" # Name your task
   container_definitions = jsonencode(
     [
@@ -39,33 +39,6 @@ resource "aws_ecs_task_definition" "fasteats" {
           { "NAME" : "DB_PASSWORD", "value" : var.containerDbPassword },
           { "NAME" : "DB_NAME", "value" : var.containerDbName },
           { "NAME" : "DB_SERVER", "value" : var.containerDbServer },
-          { "NAME" : "URL_PEDIDO_SERVICE", "value" : var.url_pedido_service },
-          { "NAME" : "URL_COZINHA_PEDIDO_SERVICE", "value" : var.url_cozinha_service },
-          {
-            "NAME" : "MERCADO_PAGO_EMAIL_EMPRESA",
-            "value" : var.containerMercadoPagoEmailEmpresa
-          },
-          {
-            "NAME" : "MERCADO_PAGO_CREDENCIAL",
-            "value" : var.containerMercadoPagoCredential
-          },
-          { "NAME" : "MERCADO_PAGO_USERID", "value" : var.containerMercadoPagoUderId },
-          { "NAME" : "MERCADO_PAGO_TIPO_PAGAMENTO", "value" : var.containerMercadoPagoTipoPagamento },
-          { "NAME" : "AWS_SQS_ENDPOINT", "value" : "https://sqs.us-east-1.amazonaws.com/730335661438" },
-          { "NAME" : "AWS_SQS_QUEUE_PEDIDO_CRIADO", "value" : "pedido-criado" },
-          { "NAME" : "AWS_SQS_QUEUE_PEDIDO_AGUARDANDO_PAGAMENTO", "value" : "pedido-aguardando-pagamento" },
-          { "NAME" : "AWS_SQS_QUEUE_PEDIDO_PAGO", "value" : "pedido-pago" },
-          { "NAME" : "AWS_SQS_QUEUE_PEDIDO_CANCELADO", "value" : "pedido-cancelado" },
-          { "NAME" : "AWS_SQS_QUEUE_COZINHA_RECEBER_PEDIDO", "value" : "cozinha-receber-pedido" },
-          { "NAME" : "AWS_SQS_QUEUE_COZINHA_ERRO_RECEBER_PEDIDO", "value" : "cozinha-erro-receber-pedido" },
-          { "NAME" : "AWS_SQS_QUEUE_PAGAMENTO_GERAR_PAGAMENTO", "value" : "pagamento-gerar-pagamento" },
-          { "NAME" : "AWS_SQS_QUEUE_PAGAMENTO_RECEBER_PEDIDO_PAGO", "value" : "pagamento-receber-pedido-pago" },
-          { "NAME" : "AWS_SQS_QUEUE_NOTIFICAR_CLIENTE", "value" : "notificar-cliente" },
-          { "NAME" : "AWS_SQS_QUEUE_NOTIFICAR_CLIENTE_PEDIDO_PAGO", "value" : "notificar-cliente-pedido-pago" },
-          { "NAME" : "AWS_SQS_QUEUE_PAGAMENTO_CANCELAR_PAGAMENTO", "value" : "pagamento-cancelar-pagamento" },
-          { "NAME" : "AWS_SQS_QUEUE_PAGAMENTO_ERRO_PAGAMENTO_PEDIDO", "value" : "pagamento-erro-pagamento-pedido" },
-          { "NAME" : "AWS_SQS_QUEUE_PAGAMENTO_ERRO_PEDIDO_CANCELAR", "value" : "pagamento-erro-pedido-cancelar" },
-          { "NAME" : "FAST_EATS_CONTATO_EMAIL_PADRAO_PAGAMENTO_PEDIDO", "value" : var.fast_eats_contato_email_padrao_pagamento_pedido },
           { "NAME" : "AWS_ACCESS_KEY", "value" : var.access_key },
           { "NAME" : "AWS_SECRET_KEY", "value" : var.secret_key },
           { "NAME" : "AWS_SESSION_TOKEN", "value" : var.session_token },
@@ -81,9 +54,9 @@ resource "aws_ecs_task_definition" "fasteats" {
         logConfiguration : {
           "logDriver" : "awslogs",
           "options" : {
-            "awslogs-group" : aws_cloudwatch_log_group.fasteats.name,
+            "awslogs-group" : aws_cloudwatch_log_group.hackathon.name,
             "awslogs-region" : var.regiao,
-            "awslogs-stream-prefix" : "ecs-fast-eats-api-${var.micro_servico}"
+            "awslogs-stream-prefix" : "ecs-hackathon-api-${var.micro_servico}"
           }
         }
       }
@@ -124,7 +97,7 @@ resource "aws_default_subnet" "default_subnet_b" {
 
 
 ##### Implement a Load Balancer #####
-resource "aws_alb" "application_load_balancer_fasteats" {
+resource "aws_alb" "application_load_balancer_hackathon" {
   name               = "load-balancer-${var.micro_servico}" #load balancer name
   load_balancer_type = "application"
   subnets = [ # Referencing the default subnets
@@ -133,12 +106,12 @@ resource "aws_alb" "application_load_balancer_fasteats" {
     #aws_default_subnet.default_subnet_c.id
   ]
   # security group
-  security_groups = [aws_security_group.load_balancer_security_group_fasteats.id]
+  security_groups = [aws_security_group.load_balancer_security_group_hackathon.id]
 }
 
 ##### Creating a Security Group for the Load Balancer #####
 # Create a security group for the load balancer:
-resource "aws_security_group" "load_balancer_security_group_fasteats" {
+resource "aws_security_group" "load_balancer_security_group_hackathon" {
   vpc_id      = aws_default_vpc.default_vpc.id
   name = "load-balancer-security-group-${var.micro_servico}"
   ingress {
@@ -156,7 +129,7 @@ resource "aws_security_group" "load_balancer_security_group_fasteats" {
   }
 }
 
-resource "aws_lb_target_group" "target_group_fasteats" {
+resource "aws_lb_target_group" "target_group_hackathon" {
   name        = "target-group-${var.micro_servico}"
   port        = 80
   protocol    = "HTTP"
@@ -173,24 +146,24 @@ resource "aws_lb_target_group" "target_group_fasteats" {
   }
 }
 
-resource "aws_lb_listener" "listener_fasteats" {
+resource "aws_lb_listener" "listener_hackathon" {
 
-  load_balancer_arn = aws_alb.application_load_balancer_fasteats.arn #  load balancer
+  load_balancer_arn = aws_alb.application_load_balancer_hackathon.arn #  load balancer
   port              = "80"
   protocol          = "HTTP"
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.target_group_fasteats.arn # target group
+    target_group_arn = aws_lb_target_group.target_group_hackathon.arn # target group
   }
 }
 
 ##### ECS Service #####
 
 
-resource "aws_ecs_service" "app_service_fasteats" {
+resource "aws_ecs_service" "app_service_hackathon" {
   name            = "service-${var.micro_servico}"                        # Name the service
-  cluster         = aws_ecs_cluster.ecs_fasteats.id      # Reference the created Cluster
-  task_definition = aws_ecs_task_definition.fasteats.arn # Reference the task that the service will spin up
+  cluster         = aws_ecs_cluster.ecs_hackathon.id      # Reference the created Cluster
+  task_definition = aws_ecs_task_definition.hackathon.arn # Reference the task that the service will spin up
   launch_type     = "FARGATE"
   desired_count   = 1 # Set up the number of containers to 3
   force_new_deployment = true
@@ -198,8 +171,8 @@ resource "aws_ecs_service" "app_service_fasteats" {
     redeployment = random_string.lower.result
   }
   load_balancer {
-    target_group_arn = aws_lb_target_group.target_group_fasteats.arn # Reference the target group
-    container_name   = aws_ecs_task_definition.fasteats.family
+    target_group_arn = aws_lb_target_group.target_group_hackathon.arn # Reference the target group
+    container_name   = aws_ecs_task_definition.hackathon.family
     container_port   = var.portaAplicacao # Specify the container port
   }
 
@@ -211,14 +184,14 @@ resource "aws_ecs_service" "app_service_fasteats" {
     ]
     assign_public_ip = true                                                  # Provide the containers with public IPs
     security_groups  = [
-      aws_security_group.service_security_group_fasteats.id,
-      aws_security_group.service_ecs_security_group_db_fasteats.id
+      aws_security_group.service_security_group_hackathon.id,
+      aws_security_group.service_ecs_security_group_db_hackathon.id
     ] # Set up the security group
   }
 }
 
 
-resource "aws_security_group" "service_security_group_fasteats" {
+resource "aws_security_group" "service_security_group_hackathon" {
   name = "service-security-group-${var.micro_servico}"
   vpc_id = aws_default_vpc.default_vpc.id
   ingress {
@@ -226,7 +199,7 @@ resource "aws_security_group" "service_security_group_fasteats" {
     to_port   = 0
     protocol  = "-1"
     # Only allowing traffic in from the load balancer security group
-    security_groups = [aws_security_group.load_balancer_security_group_fasteats.id]
+    security_groups = [aws_security_group.load_balancer_security_group_hackathon.id]
   }
 
   egress {
@@ -238,7 +211,7 @@ resource "aws_security_group" "service_security_group_fasteats" {
 }
 
 #CONFIGURAÇÃO DO BANCO DE DADOS
-resource "aws_security_group" "service_ecs_security_group_db_fasteats" {
+resource "aws_security_group" "service_ecs_security_group_db_hackathon" {
   vpc_id = aws_default_vpc.default_vpc.id
   name = "security-group-db-${var.micro_servico}"
   ingress {
@@ -246,7 +219,7 @@ resource "aws_security_group" "service_ecs_security_group_db_fasteats" {
     from_port       = var.containerDbPort
     to_port         = var.containerDbPort
     cidr_blocks     = ["0.0.0.0/0"]
-    security_groups = [aws_security_group.load_balancer_security_group_fasteats.id]
+    security_groups = [aws_security_group.load_balancer_security_group_hackathon.id]
   }
 
   egress {
@@ -254,12 +227,12 @@ resource "aws_security_group" "service_ecs_security_group_db_fasteats" {
     to_port         = 0
     protocol        = "-1"
     cidr_blocks     = ["0.0.0.0/0"]
-    security_groups = [aws_security_group.service_security_group_fasteats.id]
+    security_groups = [aws_security_group.service_security_group_hackathon.id]
   }
 }
 
-resource "aws_cloudwatch_log_group" "fasteats" {
-  name              = "fasteats-api-${var.micro_servico}"
+resource "aws_cloudwatch_log_group" "hackathon" {
+  name              = "hackathon-api-${var.micro_servico}"
   retention_in_days = 1
   tags = {
     Application = "micro-servico-${var.micro_servico}"
@@ -268,5 +241,5 @@ resource "aws_cloudwatch_log_group" "fasteats" {
 
 #Log the load balancer app URL
 output "app_url" {
-  value = aws_alb.application_load_balancer_fasteats.dns_name
+  value = aws_alb.application_load_balancer_hackathon.dns_name
 }

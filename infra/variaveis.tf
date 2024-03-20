@@ -1,25 +1,25 @@
 variable "micro_servico" {
   description = "Nome do microserviço"
   type    = string
-  default = "pagamento"
+  default = "timesheet"
 }
 
 ##### variaveis de ambiente repositorio de imagens docker#######
 variable "nome_repositorio" {
   description = "Nome do repositório de imagens Docker"
   type    = string
-  default = "microservico-pagamento"
+  default = "microservico-timesheet"
 }
 
 variable "repositorio_url" {
   description = "URL do repositório de imagens Docker do microserviço"
   type = string
-  default = "730335661438.dkr.ecr.us-east-1.amazonaws.com/microservico-pagamento"
+  default = "730335661438.dkr.ecr.us-east-1.amazonaws.com/microservico-timesheet"
 }
 
 variable "imagemDocker" {
   type    = string
-  default = "730335661438.dkr.ecr.us-east-1.amazonaws.com/microserviceo-pagamento:latest"
+  default = "730335661438.dkr.ecr.us-east-1.amazonaws.com/microservico-timesheet:latest"
 }
 
 ##### fim variaveis de ambiente repositorio de imagens docker#######
@@ -65,37 +65,6 @@ variable "containerDbRootPassword" {
   description = "Senha do user root do banco de dados do microserviço"
   type    = string
 }
-
-variable "url_pedido_service" {
-  type    = string
-  default = "http://ecs-fasteats-api-pagamento-399390289.us-west-2.elb.amazonaws.com"
-}
-
-variable "url_cozinha_service" {
-  type    = string
-  default = "http://54.163.63.60"
-}
-
-######### MERCADO PAGO #########
-variable "containerMercadoPagoEmailEmpresa" {
-  type    = string
-  default = "pagamento@lanchonete-fiap.com.br"
-}
-
-variable "containerMercadoPagoCredential" {
-  type    = string
-  default = "TEST-2087963774082813-080820-ee2b9b80edbdecf3ea8453bb8c088bc7-64946408"
-}
-variable "containerMercadoPagoUderId" {
-  type    = string
-  default = "64946408"
-}
-
-variable "containerMercadoPagoTipoPagamento" {
-  type    = string
-  default = "pix"
-}
-######### FIM MERCADO PAGO #########
 
 ######### OBS: a execution role acima foi trocada por LabRole devido a restricoes de permissao na conta da AWS Academy ########
 variable "execution_role_ecs" {
@@ -144,7 +113,5 @@ variable "session_token" {
   type    = string
 }
 
-variable "fast_eats_contato_email_padrao_pagamento_pedido" {
-  type    = string
-}
+
 

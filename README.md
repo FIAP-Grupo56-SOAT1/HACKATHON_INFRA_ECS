@@ -1,7 +1,7 @@
 # Fast Eats AWS ECS
 
 
-![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/FIAP-Grupo56-SOAT1/INFRA_ECS_FAST-EATS/main-pipeline.yml?logo=github)
+![GitHub Workflow Status (with event)](https://img.shields.io/github/actions/workflow/status/FIAP-Grupo56-SOAT1/HACKATHON_INFRA_ECS/main-pipeline.yml?logo=github)
 
 Este repositório tem como objetivo criar a infraestrutura necessária para executar a aplicação Fast Eats no AWS Elastic Container Service (ECS) utilizando a imagem da aplicação disponível no DockerHub.
 
