@@ -112,6 +112,9 @@ variable "secret_key" {
 variable "session_token" {
   type    = string
 }
+variable "jwt_secret" {
+  type    = string
+}
 
 
 

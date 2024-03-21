@@ -43,6 +43,7 @@ resource "aws_ecs_task_definition" "hackathon" {
           { "NAME" : "AWS_SECRET_KEY", "value" : var.secret_key },
           { "NAME" : "AWS_SESSION_TOKEN", "value" : var.session_token },
           { "NAME" : "AWS_REGION", "value" : var.regiao }
+          { "NAME" : "JWT_SECRET", "value" : var.jwt_secret }
         ]
         essential = true
         portMappings = [
