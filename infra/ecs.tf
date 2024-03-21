@@ -73,7 +73,6 @@ resource "aws_ecs_task_definition" "hackathon" {
   }
 }
 
-
 ##### Creating a VPC #####
 # Provide a reference to your default VPC
 resource "aws_default_vpc" "default_vpc" {
@@ -95,40 +94,6 @@ resource "aws_default_subnet" "default_subnet_b" {
 #  availability_zone = "us-east-1c"
 #}
 
-
-##### Implement a Load Balancer #####
-resource "aws_alb" "application_load_balancer_hackathon" {
-  name               = "load-balancer-${var.micro_servico}" #load balancer name
-  load_balancer_type = "application"
-  subnets = [ # Referencing the default subnets
-    aws_default_subnet.default_subnet_a.id,
-    aws_default_subnet.default_subnet_b.id,
-    #aws_default_subnet.default_subnet_c.id
-  ]
-  # security group
-  security_groups = [aws_security_group.load_balancer_security_group_hackathon.id]
-}
-
-##### Creating a Security Group for the Load Balancer #####
-# Create a security group for the load balancer:
-resource "aws_security_group" "load_balancer_security_group_hackathon" {
-  vpc_id      = aws_default_vpc.default_vpc.id
-  name = "load-balancer-security-group-${var.micro_servico}"
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"] # Allow traffic in from all sources
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
 resource "aws_lb_target_group" "target_group_hackathon" {
   name        = "target-group-${var.micro_servico}"
   port        = 80
@@ -146,9 +111,14 @@ resource "aws_lb_target_group" "target_group_hackathon" {
   }
 }
 
+
+data "aws_alb" "application_load_balancer" {
+  name   = "load-balancer-${var.micro_servico}"
+}
+
 resource "aws_lb_listener" "listener_hackathon" {
 
-  load_balancer_arn = aws_alb.application_load_balancer_hackathon.arn #  load balancer
+  load_balancer_arn = data.aws_alb.application_load_balancer.arn
   port              = "80"
   protocol          = "HTTP"
   default_action {
@@ -184,52 +154,20 @@ resource "aws_ecs_service" "app_service_hackathon" {
     ]
     assign_public_ip = true                                                  # Provide the containers with public IPs
     security_groups  = [
-      aws_security_group.service_security_group_hackathon.id,
-      aws_security_group.service_ecs_security_group_db_hackathon.id
+      data.aws_security_group.service_security_group_hackathon.id,
+      data.aws_security_group.service_ecs_security_group_db_hackathon.id
     ] # Set up the security group
   }
 }
 
-
-resource "aws_security_group" "service_security_group_hackathon" {
+data "aws_security_group" "service_security_group_hackathon" {
   name = "service-security-group-${var.micro_servico}"
-  vpc_id = aws_default_vpc.default_vpc.id
-  ingress {
-    from_port = 0
-    to_port   = 0
-    protocol  = "-1"
-    # Only allowing traffic in from the load balancer security group
-    security_groups = [aws_security_group.load_balancer_security_group_hackathon.id]
-  }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
 }
 
-#CONFIGURAÇÃO DO BANCO DE DADOS
-resource "aws_security_group" "service_ecs_security_group_db_hackathon" {
-  vpc_id = aws_default_vpc.default_vpc.id
+data "aws_security_group" "service_ecs_security_group_db_hackathon" {
   name = "security-group-db-${var.micro_servico}"
-  ingress {
-    protocol        = "tcp"
-    from_port       = var.containerDbPort
-    to_port         = var.containerDbPort
-    cidr_blocks     = ["0.0.0.0/0"]
-    security_groups = [aws_security_group.load_balancer_security_group_hackathon.id]
-  }
-
-  egress {
-    from_port       = 0
-    to_port         = 0
-    protocol        = "-1"
-    cidr_blocks     = ["0.0.0.0/0"]
-    security_groups = [aws_security_group.service_security_group_hackathon.id]
-  }
 }
+
 
 resource "aws_cloudwatch_log_group" "hackathon" {
   name              = "hackathon-api-${var.micro_servico}"
@@ -239,7 +177,3 @@ resource "aws_cloudwatch_log_group" "hackathon" {
   }
 }
 
-#Log the load balancer app URL
-output "app_url" {
-  value = aws_alb.application_load_balancer_hackathon.dns_name
-}
