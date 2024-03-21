@@ -35,7 +35,7 @@ resource "aws_ecs_task_definition" "hackathon" {
         environment = [
           { "NAME" : "APP_PORT", "value" : tostring(var.portaAplicacao) },
           { "NAME" : "DB_PORT", "value" : var.containerDbPort },
-          { "NAME" : "DB_USERNAME", "value" : var.containerDbUser },
+          { "NAME" : "DB_USER", "value" : var.containerDbUser },
           { "NAME" : "DB_PASSWORD", "value" : var.containerDbPassword },
           { "NAME" : "DB_NAME", "value" : var.containerDbName },
           { "NAME" : "DB_SERVER", "value" : var.containerDbServer },
