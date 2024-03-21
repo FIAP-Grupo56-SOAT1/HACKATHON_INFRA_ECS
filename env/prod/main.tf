@@ -44,8 +44,3 @@ data "aws_secretsmanager_secret" "secrets_microservico" {
 data "aws_secretsmanager_secret_version" "credentials" {
   secret_id = data.aws_secretsmanager_secret.secrets_microservico.id
 }
-
-
-output "IP_alb" {
-  value = module.prod.app_url
-}
