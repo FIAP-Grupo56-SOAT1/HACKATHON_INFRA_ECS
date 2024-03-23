@@ -180,45 +180,94 @@ resource "aws_cloudwatch_log_group" "timesheet" {
 
 # autoscaling
 
-resource "aws_appautoscaling_target" "autoscaling_target_timesheet" {
-  max_capacity       = 4
-  min_capacity       = 1
+# auto_scaling.tf
+
+resource "aws_appautoscaling_target" "target" {
+  service_namespace  = "ecs"
   resource_id        = "service/${aws_ecs_cluster.ecs_timesheet.name}/${aws_ecs_service.app_service_timesheet.name}"
   scalable_dimension = "ecs:service:DesiredCount"
+  role_arn           = var.execution_role_ecs
+  min_capacity       = 1
+  max_capacity       = 4
+}
+
+# Automatically scale capacity up by one
+resource "aws_appautoscaling_policy" "up" {
+  name               = "${var.micro_servico}_scale_up"
   service_namespace  = "ecs"
-}
+  resource_id        = "service/${aws_ecs_cluster.ecs_timesheet.name}/${aws_ecs_service.app_service_timesheet.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
 
-resource "aws_appautoscaling_policy" "ecs_policy_memory" {
-  name               = "${var.micro_servico}-memory-autoscaling"
-  policy_type        = "TargetTrackingScaling"
-  resource_id        = aws_appautoscaling_target.autoscaling_target_timesheet.resource_id
-  scalable_dimension = aws_appautoscaling_target.autoscaling_target_timesheet.scalable_dimension
-  service_namespace  = aws_appautoscaling_target.autoscaling_target_timesheet.service_namespace
+  step_scaling_policy_configuration {
+    adjustment_type         = "ChangeInCapacity"
+    cooldown                = 60
+    metric_aggregation_type = "Maximum"
 
-  target_tracking_scaling_policy_configuration {
-    predefined_metric_specification {
-      predefined_metric_type = "ECSServiceAverageMemoryUtilization"
+    step_adjustment {
+      metric_interval_lower_bound = 0
+      scaling_adjustment          = 1
     }
-    scale_in_cooldown  = 180  #tempo em segundo, após a conclusão de uma escala antes que outra escala ser iniciada
-    scale_out_cooldown = 30   #tempo em segundo, após a conclusão de uma expansão antes que outra expansão ser iniciada
-    target_value       = 60
   }
+
+  depends_on = [aws_appautoscaling_target.target]
 }
 
-resource "aws_appautoscaling_policy" "ecs_policy_cpu" {
-  name               = "${var.micro_servico}-cpu-autoscaling"
-  policy_type        = "TargetTrackingScaling"
-  resource_id        = aws_appautoscaling_target.autoscaling_target_timesheet.resource_id
-  scalable_dimension = aws_appautoscaling_target.autoscaling_target_timesheet.scalable_dimension
-  service_namespace  = aws_appautoscaling_target.autoscaling_target_timesheet.service_namespace
+# Automatically scale capacity down by one
+resource "aws_appautoscaling_policy" "down" {
+  name               = "${var.micro_servico}_scale_down"
+  service_namespace  = "ecs"
+  resource_id        = "service/${aws_ecs_cluster.ecs_timesheet.name}/${aws_ecs_service.app_service_timesheet.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
 
-  target_tracking_scaling_policy_configuration {
-    predefined_metric_specification {
-      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+  step_scaling_policy_configuration {
+    adjustment_type         = "ChangeInCapacity"
+    cooldown                = 60
+    metric_aggregation_type = "Maximum"
+
+    step_adjustment {
+      metric_interval_lower_bound = 0
+      scaling_adjustment          = -1
     }
-
-    scale_in_cooldown  = 180  #tempo em segundo, após a conclusão de uma escala antes que outra escala ser iniciada
-    scale_out_cooldown = 30   #tempo em segundo, após a conclusão de uma expansão antes que outra atividade de expansão possa ser iniciada
-    target_value       = 50
   }
+
+  depends_on = [aws_appautoscaling_target.target]
 }
+
+# CloudWatch alarm that triggers the autoscaling up policy
+resource "aws_cloudwatch_metric_alarm" "service_cpu_high" {
+  alarm_name          = "${var.micro_servico}_cpu_utilization_high"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1" # minutes
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/ECS"
+  period              = "60"
+  statistic           = "Average"
+  threshold           = "50"
+
+  dimensions = {
+    ClusterName = aws_ecs_cluster.ecs_timesheet.name
+    ServiceName = aws_ecs_service.app_service_timesheet.name
+  }
+
+  alarm_actions = [aws_appautoscaling_policy.up.arn]
+}
+
+# CloudWatch alarm that triggers the autoscaling down policy
+resource "aws_cloudwatch_metric_alarm" "service_cpu_low" {
+  alarm_name          = "${var.micro_servico}_cpu_utilization_low"
+  comparison_operator = "LessThanOrEqualToThreshold"
+  evaluation_periods  = "3"     # minutes
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/ECS"
+  period              = "60"
+  statistic           = "Average"
+  threshold           = "20"
+
+  dimensions = {
+    ClusterName = aws_ecs_cluster.ecs_timesheet.name
+    ServiceName = aws_ecs_service.app_service_timesheet.name
+  }
+
+  alarm_actions = [aws_appautoscaling_policy.down.arn]
+}
+
