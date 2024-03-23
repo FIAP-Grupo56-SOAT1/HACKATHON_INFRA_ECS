@@ -32,7 +32,8 @@ module "prod" {
   access_key                                      = jsondecode(data.aws_secretsmanager_secret_version.credentials.secret_string)["access_key"]
   secret_key                                      = jsondecode(data.aws_secretsmanager_secret_version.credentials.secret_string)["secret_key"]
   session_token                                   = jsondecode(data.aws_secretsmanager_secret_version.credentials.secret_string)["session_token"]
-  jwt_secret                                   = jsondecode(data.aws_secretsmanager_secret_version.credentials.secret_string)["jwt_secret"]
+  jwt_secret                                      = jsondecode(data.aws_secretsmanager_secret_version.credentials.secret_string)["jwt_secret"]
+  time_zone                                       = jsondecode(data.aws_secretsmanager_secret_version.credentials.secret_string)["time_zone"]
 }
 
 

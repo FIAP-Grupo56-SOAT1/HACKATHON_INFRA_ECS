@@ -115,6 +115,10 @@ variable "session_token" {
 variable "jwt_secret" {
   type    = string
 }
+variable "time_zone" {
+  type    = string
+  default = "America/Sao_Paulo"
+}
 
 
 
