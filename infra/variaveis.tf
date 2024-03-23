@@ -120,5 +120,30 @@ variable "time_zone" {
   default = "America/Sao_Paulo"
 }
 
+variable "sender_mail" {
+  type    = string
+}
+
+
+variable "sender_mail_password" {
+  type    = string
+}
+
+
+variable "mail_host" {
+  type    = string
+}
+
+
+variable "mail_port" {
+  type    = string
+}
+
+
+sender_mail=wilianfiap@gmail.com
+sender_mail_password=cczi ddwy seen kygq
+mail_host=smtp.gmail.com
+mail_port=587
+
 
 

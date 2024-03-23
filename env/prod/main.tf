@@ -34,6 +34,11 @@ module "prod" {
   session_token                                   = jsondecode(data.aws_secretsmanager_secret_version.credentials.secret_string)["session_token"]
   jwt_secret                                      = jsondecode(data.aws_secretsmanager_secret_version.credentials.secret_string)["jwt_secret"]
   time_zone                                       = jsondecode(data.aws_secretsmanager_secret_version.credentials.secret_string)["time_zone"]
+
+  sender_mail                                     = jsondecode(data.aws_secretsmanager_secret_version.credentials.secret_string)["sender_mail"]
+  sender_mail_password                            = jsondecode(data.aws_secretsmanager_secret_version.credentials.secret_string)["sender_mail_password"]
+  mail_host                                       = jsondecode(data.aws_secretsmanager_secret_version.credentials.secret_string)["mail_host"]
+  mail_port                                       = jsondecode(data.aws_secretsmanager_secret_version.credentials.secret_string)["mail_port"]
 }
 
 
