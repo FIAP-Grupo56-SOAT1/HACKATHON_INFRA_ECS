@@ -1,5 +1,5 @@
 ########## Creating an ECS Cluster ########
-resource "aws_ecs_cluster" "ecs_hackathon" {
+resource "aws_ecs_cluster" "ecs_timesheet" {
   name               = "cluster-${var.micro_servico}"
   setting {
     name  = "containerInsights"
@@ -23,7 +23,7 @@ resource "random_string" "lower" {
 }
 
 ######### Configuring AWS ECS Task Definitions ########
-resource "aws_ecs_task_definition" "hackathon" {
+resource "aws_ecs_task_definition" "timesheet" {
   family = "task-${var.micro_servico}" # Name your task
   container_definitions = jsonencode(
     [
@@ -55,9 +55,9 @@ resource "aws_ecs_task_definition" "hackathon" {
         logConfiguration : {
           "logDriver" : "awslogs",
           "options" : {
-            "awslogs-group" : aws_cloudwatch_log_group.hackathon.name,
+            "awslogs-group" : aws_cloudwatch_log_group.timesheet.name,
             "awslogs-region" : var.regiao,
-            "awslogs-stream-prefix" : "ecs-hackathon-api-${var.micro_servico}"
+            "awslogs-stream-prefix" : "ecs-timesheet-api-${var.micro_servico}"
           }
         }
       }
@@ -95,8 +95,8 @@ resource "aws_default_subnet" "default_subnet_b" {
 #  availability_zone = "us-east-1c"
 #}
 
-resource "aws_lb_target_group" "target_group_hackathon" {
-  name        = "target-group-${var.micro_servico}"
+resource "aws_lb_target_group" "lb_target_group_timesheet" {
+  name        = "lb-target-group-${var.micro_servico}"
   port        = 80
   protocol    = "HTTP"
   target_type = "ip"
@@ -117,24 +117,24 @@ data "aws_alb" "application_load_balancer" {
   name   = "load-balancer-${var.micro_servico}"
 }
 
-resource "aws_lb_listener" "listener_hackathon" {
+resource "aws_lb_listener" "listener_timesheet" {
 
   load_balancer_arn = data.aws_alb.application_load_balancer.arn
   port              = "80"
   protocol          = "HTTP"
   default_action {
     type             = "forward"
-    target_group_arn = aws_lb_target_group.target_group_hackathon.arn # target group
+    target_group_arn = aws_lb_target_group.lb_target_group_timesheet.arn # target group
   }
 }
 
 ##### ECS Service #####
 
 
-resource "aws_ecs_service" "app_service_hackathon" {
+resource "aws_ecs_service" "app_service_timesheet" {
   name            = "service-${var.micro_servico}"                        # Name the service
-  cluster         = aws_ecs_cluster.ecs_hackathon.id      # Reference the created Cluster
-  task_definition = aws_ecs_task_definition.hackathon.arn # Reference the task that the service will spin up
+  cluster         = aws_ecs_cluster.ecs_timesheet.id      # Reference the created Cluster
+  task_definition = aws_ecs_task_definition.timesheet.arn # Reference the task that the service will spin up
   launch_type     = "FARGATE"
   desired_count   = 1 # Set up the number of containers to 3
   force_new_deployment = true
@@ -142,8 +142,8 @@ resource "aws_ecs_service" "app_service_hackathon" {
     redeployment = random_string.lower.result
   }
   load_balancer {
-    target_group_arn = aws_lb_target_group.target_group_hackathon.arn # Reference the target group
-    container_name   = aws_ecs_task_definition.hackathon.family
+    target_group_arn = aws_lb_target_group.lb_target_group_timesheet.arn # Reference the target group
+    container_name   = aws_ecs_task_definition.timesheet.family
     container_port   = var.portaAplicacao # Specify the container port
   }
 
@@ -155,26 +155,70 @@ resource "aws_ecs_service" "app_service_hackathon" {
     ]
     assign_public_ip = true                                                  # Provide the containers with public IPs
     security_groups  = [
-      data.aws_security_group.service_security_group_hackathon.id,
-      data.aws_security_group.service_ecs_security_group_db_hackathon.id
+      data.aws_security_group.service_security_group_timesheet.id,
+      data.aws_security_group.service_ecs_security_group_db_timesheet.id
     ] # Set up the security group
   }
 }
 
-data "aws_security_group" "service_security_group_hackathon" {
+data "aws_security_group" "service_security_group_timesheet" {
   name = "service-security-group-${var.micro_servico}"
 }
 
-data "aws_security_group" "service_ecs_security_group_db_hackathon" {
+data "aws_security_group" "service_ecs_security_group_db_timesheet" {
   name = "security-group-db-${var.micro_servico}"
 }
 
 
-resource "aws_cloudwatch_log_group" "hackathon" {
-  name              = "hackathon-api-${var.micro_servico}"
+resource "aws_cloudwatch_log_group" "timesheet" {
+  name              = "timesheet-api-${var.micro_servico}"
   retention_in_days = 1
   tags = {
     Application = "micro-servico-${var.micro_servico}"
   }
 }
 
+# autoscaling
+
+resource "aws_appautoscaling_target" "autoscaling_target_timesheet" {
+  max_capacity       = 4
+  min_capacity       = 1
+  resource_id        = "service/${aws_ecs_cluster.ecs_timesheet.name}/${aws_ecs_service.app_service_timesheet.name}"
+  scalable_dimension = "ecs:service:DesiredCount"
+  service_namespace  = "ecs"
+}
+
+resource "aws_appautoscaling_policy" "ecs_policy_memory" {
+  name               = "${var.micro_servico}-memory-autoscaling"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.autoscaling_target_timesheet.resource_id
+  scalable_dimension = aws_appautoscaling_target.autoscaling_target_timesheet.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.autoscaling_target_timesheet.service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageMemoryUtilization"
+    }
+    scale_in_cooldown  = 180  #tempo em segundo, após a conclusão de uma escala antes que outra escala ser iniciada
+    scale_out_cooldown = 30   #tempo em segundo, após a conclusão de uma expansão antes que outra expansão ser iniciada
+    target_value       = 60
+  }
+}
+
+resource "aws_appautoscaling_policy" "ecs_policy_cpu" {
+  name               = "${var.micro_servico}-cpu-autoscaling"
+  policy_type        = "TargetTrackingScaling"
+  resource_id        = aws_appautoscaling_target.autoscaling_target_timesheet.resource_id
+  scalable_dimension = aws_appautoscaling_target.autoscaling_target_timesheet.scalable_dimension
+  service_namespace  = aws_appautoscaling_target.autoscaling_target_timesheet.service_namespace
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+
+    scale_in_cooldown  = 180  #tempo em segundo, após a conclusão de uma escala antes que outra escala ser iniciada
+    scale_out_cooldown = 30   #tempo em segundo, após a conclusão de uma expansão antes que outra atividade de expansão possa ser iniciada
+    target_value       = 50
+  }
+}
