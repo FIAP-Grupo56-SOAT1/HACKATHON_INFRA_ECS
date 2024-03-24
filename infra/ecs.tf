@@ -43,7 +43,12 @@ resource "aws_ecs_task_definition" "timesheet" {
           { "NAME" : "AWS_SECRET_KEY", "value" : var.secret_key },
           { "NAME" : "AWS_SESSION_TOKEN", "value" : var.session_token },
           { "NAME" : "AWS_REGION", "value" : var.regiao },
-          { "NAME" : "JWT_SECRET", "value" : var.jwt_secret }
+          { "NAME" : "JWT_SECRET", "value" : var.jwt_secret },
+          { "NAME" : "TIME_ZONE", "value" : var.time_zone },
+          { "NAME" : "SENDER_MAIL", "value" : var.sender_mail },
+          { "NAME" : "SENDER_MAIL_PASSWORD", "value" : var.sender_mail_password },
+          { "NAME" : "MAIL_HOST", "value" : var.mail_host },
+          { "NAME" : "MAIL_PORT", "value" : var.mail_port }
         ]
         essential = true
         portMappings = [

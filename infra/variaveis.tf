@@ -115,6 +115,29 @@ variable "session_token" {
 variable "jwt_secret" {
   type    = string
 }
+variable "time_zone" {
+  type    = string
+  default = "America/Sao_Paulo"
+}
+
+variable "sender_mail" {
+  type    = string
+}
+
+
+variable "sender_mail_password" {
+  type    = string
+}
+
+
+variable "mail_host" {
+  type    = string
+}
+
+
+variable "mail_port" {
+  type = string
+}
 
 
 
