@@ -136,14 +136,8 @@ variable "mail_host" {
 
 
 variable "mail_port" {
-  type    = string
+  type = string
 }
-
-
-sender_mail=wilianfiap@gmail.com
-sender_mail_password=cczi ddwy seen kygq
-mail_host=smtp.gmail.com
-mail_port=587
 
 
 
